@@ -1,0 +1,54 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.layers import Dense
+from sklearn.metrics import mean_squared_error, r2_score
+df = pd.read_csv('C:/House price prediction/data.csv')
+X = df[['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors',
+        'waterfront', 'view', 'condition', 'sqft_above', 'sqft_basement',
+        'yr_built', 'yr_renovated']]
+y = df['price']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+model = Sequential()
+model.add(Dense(64, activation='relu', input_shape=(X_train.shape[1],)))
+model.add(Dense(32, activation='relu'))
+model.add(Dense(1))  # Output layer for regression
+model.compile(optimizer='adam', loss='mean_squared_error')
+model.fit(X_train_scaled, y_train, epochs=100, validation_data=(X_test_scaled, y_test))
+model.save('house_price_prediction_model.h5')
+
+print("Model trained and saved as house_price_prediction_model.h5")
+
+model = load_model('house_price_prediction_model.h5')
+
+def standardize_input(input_data, scaler):
+    return scaler.transform([input_data])
+
+print("Please provide the following details to predict the house price:")
+
+bedrooms = float(input("Number of bedrooms: "))
+bathrooms = float(input("Number of bathrooms: "))
+sqft_living = float(input("Size of the house in square feet: "))
+sqft_lot = float(input("Size of the lot in square feet: "))
+floors = float(input("Number of floors: "))
+waterfront = int(input("Is it a waterfront property? (1 for Yes, 0 for No): "))
+view = int(input("View rating (0-4): "))
+condition = int(input("Condition rating (1-5): "))
+sqft_above = float(input("Square feet above ground: "))
+sqft_basement = float(input("Square feet of the basement: "))
+yr_built = int(input("Year the house was built: "))
+yr_renovated = int(input("Year the house was renovated (0 if not renovated): "))
+
+user_input = [bedrooms, bathrooms, sqft_living, sqft_lot, floors, waterfront,
+              view, condition, sqft_above, sqft_basement, yr_built, yr_renovated]
+
+user_input_scaled = standardize_input(user_input, scaler)
+
+
+predicted_price = model.predict(user_input_scaled)
+
+print(f"\nPredicted House Price: ${predicted_price[0][0]:,.2f}")
